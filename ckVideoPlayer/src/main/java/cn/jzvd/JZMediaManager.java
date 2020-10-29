@@ -1,5 +1,6 @@
 package cn.jzvd;
 
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.os.Handler;
@@ -15,6 +16,10 @@ import android.view.TextureView;
  * Created by Nathen on 2017/11/18.
  */
 public class JZMediaManager implements TextureView.SurfaceTextureListener {
+
+    public enum MediaType {
+        SYSTEM, IJKPLAYER
+    }
 
     public static final String TAG = "JiaoZiVideoPlayer";
     public static final int HANDLER_PREPARE = 0;
@@ -38,9 +43,18 @@ public class JZMediaManager implements TextureView.SurfaceTextureListener {
         mMediaHandlerThread.start();
         mMediaHandler = new MediaHandler(mMediaHandlerThread.getLooper());
         mainThreadHandler = new Handler();
-        if (jzMediaInterface == null)
-            //jzMediaInterface = new JZMediaSystem();
-             jzMediaInterface = new JZMediaIjkplayer();
+//        if (jzMediaInterface == null)
+//            switch (mediaType) {
+//                default:
+//                case SYSTEM:
+//                    jzMediaInterface = new CommonMediaPlayer();
+//                    break;
+////                case IJKPLAYER:
+////                default:
+////                    jzMediaInterface = new JZMediaIjkplayer();
+////                    break;
+//            }
+
     }
 
     public static JZMediaManager instance() {
@@ -48,6 +62,19 @@ public class JZMediaManager implements TextureView.SurfaceTextureListener {
             jzMediaManager = new JZMediaManager();
         }
         return jzMediaManager;
+    }
+
+    public void init(Context context,MediaType mediaType){
+        switch (mediaType) {
+            case SYSTEM:
+                instance().jzMediaInterface = new CommonMediaPlayer();
+                break;
+            case IJKPLAYER:
+            default:
+                instance().jzMediaInterface = new JZMediaIjkplayer();
+                break;
+        }
+        instance().jzMediaInterface.setContext(context);
     }
 
     public static Object[] getDataSource() {

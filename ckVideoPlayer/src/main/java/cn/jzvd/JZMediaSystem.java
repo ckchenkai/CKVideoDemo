@@ -1,5 +1,6 @@
 package cn.jzvd;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.view.Surface;
@@ -88,6 +89,11 @@ public class JZMediaSystem extends JZMediaInterface implements MediaPlayer.OnPre
     }
 
     @Override
+    public void setContext(Context context) {
+
+    }
+
+    @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         mediaPlayer.start();
         if (currentDataSource.toString().toLowerCase().contains("mp3")) {
@@ -170,8 +176,8 @@ public class JZMediaSystem extends JZMediaInterface implements MediaPlayer.OnPre
 
     @Override
     public void onVideoSizeChanged(MediaPlayer mediaPlayer, int width, int height) {
-        JZMediaManager.instance().currentVideoWidth = width;
-        JZMediaManager.instance().currentVideoHeight = height;
+        JZMediaManager.instance().currentVideoWidth = mediaPlayer.getVideoWidth();
+        JZMediaManager.instance().currentVideoHeight = mediaPlayer.getVideoHeight();
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {

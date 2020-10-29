@@ -59,6 +59,7 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
     public static final int SCREEN_WINDOW_LIST = 1;
     public static final int SCREEN_WINDOW_FULLSCREEN = 2;
     public static final int SCREEN_WINDOW_TINY = 3;
+    protected JZMediaManager.MediaType mMediaType = JZMediaManager.MediaType.IJKPLAYER;
     @IntDef({SCREEN_WINDOW_NORMAL,SCREEN_WINDOW_LIST,SCREEN_WINDOW_FULLSCREEN,SCREEN_WINDOW_TINY})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Screen{}
@@ -124,7 +125,9 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
     public TextView currentTimeTextView, totalTimeTextView;
     public ViewGroup textureViewContainer;
     public ProgressBar bottomProgressBar;
+    public FrameLayout bottomProgressBarWrap;
     public ViewGroup topContainer, bottomContainer;
+    public FrameLayout topContainerWrap;
     public int widthRatio = 0;
     public int heightRatio = 0;
     public Object[] dataSourceObjects;//这个参数原封不动直接通过JZMeidaManager传给JZMediaInterface。
@@ -152,6 +155,7 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
     protected boolean isFullWinTopVisible = true;
     protected boolean isStartBtnVisible = true;
     protected boolean isLiveStream; /**是否是直播流*/
+    protected boolean isHideControl;/** 是否隐藏所有控制面板，只播放视频*/
     protected OnCurrentStateInterface onCurrentStateInterface;
 
     public JZVideoPlayer(Context context) {
@@ -373,9 +377,11 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
         currentTimeTextView = (TextView) findViewById(R.id.current);
         totalTimeTextView = (TextView) findViewById(R.id.total);
         bottomProgressBar = (ProgressBar) findViewById(R.id.bottom_progress);
+        bottomProgressBarWrap = findViewById(R.id.bottom_progress_wrap);
         bottomContainer = (ViewGroup) findViewById(R.id.layout_bottom);
         textureViewContainer = (ViewGroup) findViewById(R.id.surface_container);
         topContainer = (ViewGroup) findViewById(R.id.layout_top);
+        topContainerWrap = findViewById(R.id.top_container_wrap);
 
         startButton.setOnClickListener(this);
         fullscreenButton.setOnClickListener(this);
@@ -398,6 +404,7 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
         }
     }
 
+
     protected void setUp(String url, int screen, Object... objects) {
         LinkedHashMap map = new LinkedHashMap();
         map.put(URL_KEY_DEFAULT, url);
@@ -407,6 +414,7 @@ public abstract class JZVideoPlayer extends FrameLayout implements View.OnClickL
     }
 
     protected void setUp(Object[] dataSourceObjects, int defaultUrlMapIndex, int screen, Object... objects) {
+        JZMediaManager.instance().init(getContext(),mMediaType);
         if (this.dataSourceObjects != null && JZUtils.getCurrentFromDataSource(dataSourceObjects, currentUrlMapIndex) != null &&
                 JZUtils.getCurrentFromDataSource(this.dataSourceObjects, currentUrlMapIndex).equals(JZUtils.getCurrentFromDataSource(dataSourceObjects, currentUrlMapIndex))) {
             return;

@@ -3,6 +3,7 @@ package cn.jzvd;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.TimedText;
 import android.net.Uri;
 import android.view.Surface;
 
@@ -14,16 +15,23 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkTimedText;
 
 /**
- * Created by Nathen on 2017/11/18.
+ * 原生MediaPlayer封装类
+ * Created by ck on 2020/10/29.
  */
 
-public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.OnPreparedListener, IMediaPlayer.OnVideoSizeChangedListener, IMediaPlayer.OnCompletionListener, IMediaPlayer.OnErrorListener, IMediaPlayer.OnInfoListener, IMediaPlayer.OnBufferingUpdateListener, IMediaPlayer.OnSeekCompleteListener, IMediaPlayer.OnTimedTextListener {
-    IjkMediaPlayer ijkMediaPlayer;
+public class CommonMediaPlayer extends JZMediaInterface implements MediaPlayer.OnPreparedListener, MediaPlayer.OnVideoSizeChangedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnTimedTextListener {
+    MediaPlayer mediaPlayer;
+    Context context;
+
+    @Override
+    public void setContext(Context context) {
+        this.context = context;
+    }
 
     @Override
     public void start() {
         try {
-            ijkMediaPlayer.start();
+            mediaPlayer.start();
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
@@ -31,29 +39,26 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
 
     @Override
     public void prepare() {
-        ijkMediaPlayer = new IjkMediaPlayer();
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
+        mediaPlayer = new MediaPlayer();
 
-        ijkMediaPlayer.setOnPreparedListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnVideoSizeChangedListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnCompletionListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnErrorListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnInfoListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnBufferingUpdateListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnSeekCompleteListener(JZMediaIjkplayer.this);
-        ijkMediaPlayer.setOnTimedTextListener(JZMediaIjkplayer.this);
+        mediaPlayer.setOnPreparedListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnVideoSizeChangedListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnCompletionListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnErrorListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnInfoListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnBufferingUpdateListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnSeekCompleteListener(CommonMediaPlayer.this);
+        mediaPlayer.setOnTimedTextListener(CommonMediaPlayer.this);
 
         try {
-            ijkMediaPlayer.setDataSource(currentDataSource.toString());
-            ijkMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            ijkMediaPlayer.setScreenOnWhilePlaying(true);
-            ijkMediaPlayer.prepareAsync();
+            if(currentDataSource instanceof Uri){
+                mediaPlayer.setDataSource(context, (Uri) currentDataSource);
+            }else{
+                mediaPlayer.setDataSource(currentDataSource.toString());
+            }
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mediaPlayer.setScreenOnWhilePlaying(true);
+            mediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (IllegalStateException e) {
@@ -65,9 +70,9 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
 
     @Override
     public void pause() {
-        if (ijkMediaPlayer != null) {
+        if (mediaPlayer != null) {
             try {
-                ijkMediaPlayer.pause();
+                mediaPlayer.pause();
             } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
@@ -77,13 +82,13 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
 
     @Override
     public boolean isPlaying() {
-        return ijkMediaPlayer.isPlaying();
+        return mediaPlayer.isPlaying();
     }
 
     @Override
     public void seekTo(long time) {
         try {
-            ijkMediaPlayer.seekTo(time);
+            mediaPlayer.seekTo((int) time);
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
@@ -91,34 +96,29 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
 
     @Override
     public void release() {
-        if (ijkMediaPlayer != null)
-            ijkMediaPlayer.release();
+        if (mediaPlayer != null)
+            mediaPlayer.release();
     }
 
     @Override
     public long getCurrentPosition() {
-        return ijkMediaPlayer.getCurrentPosition();
+        return mediaPlayer!=null?mediaPlayer.getCurrentPosition():0L;
     }
 
     @Override
     public long getDuration() {
-        return ijkMediaPlayer.getDuration();
+        return mediaPlayer!=null?mediaPlayer.getDuration():0L;
     }
 
     @Override
     public void setSurface(Surface surface) {
-        ijkMediaPlayer.setSurface(surface);
+        mediaPlayer.setSurface(surface);
     }
 
     @Override
-    public void setContext(Context context) {
-
-    }
-
-    @Override
-    public void onPrepared(IMediaPlayer iMediaPlayer) {
+    public void onPrepared(MediaPlayer iMediaPlayer) {
         try {
-            ijkMediaPlayer.start();
+            mediaPlayer.start();
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
@@ -135,7 +135,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public void onVideoSizeChanged(IMediaPlayer iMediaPlayer, int i, int i1, int i2, int i3) {
+    public void onVideoSizeChanged(MediaPlayer iMediaPlayer, int width, int height) {
         JZMediaManager.instance().currentVideoWidth = iMediaPlayer.getVideoWidth();
         JZMediaManager.instance().currentVideoHeight = iMediaPlayer.getVideoHeight();
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
@@ -149,7 +149,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public void onCompletion(IMediaPlayer iMediaPlayer) {
+    public void onCompletion(MediaPlayer iMediaPlayer) {
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -161,7 +161,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public boolean onError(IMediaPlayer iMediaPlayer, final int what, final int extra) {
+    public boolean onError(MediaPlayer iMediaPlayer, final int what, final int extra) {
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -174,7 +174,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public boolean onInfo(IMediaPlayer iMediaPlayer, final int what, final int extra) {
+    public boolean onInfo(MediaPlayer iMediaPlayer, final int what, final int extra) {
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -191,7 +191,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public void onBufferingUpdate(IMediaPlayer iMediaPlayer, final int percent) {
+    public void onBufferingUpdate(MediaPlayer iMediaPlayer, final int percent) {
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -203,7 +203,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public void onSeekComplete(IMediaPlayer iMediaPlayer) {
+    public void onSeekComplete(MediaPlayer iMediaPlayer) {
         JZMediaManager.instance().mainThreadHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -215,7 +215,7 @@ public class JZMediaIjkplayer extends JZMediaInterface implements IMediaPlayer.O
     }
 
     @Override
-    public void onTimedText(IMediaPlayer iMediaPlayer, IjkTimedText ijkTimedText) {
+    public void onTimedText(MediaPlayer mp, TimedText text) {
 
     }
 }

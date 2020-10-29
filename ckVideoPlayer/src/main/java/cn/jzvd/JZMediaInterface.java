@@ -1,5 +1,6 @@
 package cn.jzvd;
 
+import android.content.Context;
 import android.view.Surface;
 
 /**
@@ -34,4 +35,6 @@ public abstract class JZMediaInterface {
     public abstract long getDuration();
 
     public abstract void setSurface(Surface surface);
+
+    public abstract void setContext(Context context);
 }

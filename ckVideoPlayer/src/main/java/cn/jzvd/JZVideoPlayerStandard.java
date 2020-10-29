@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -139,6 +140,16 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
         mRetryBtn.setOnClickListener(this);
     }
 
+    /**
+     * 播放内核：原生MediaPlayer / IJKPlayer
+     *
+     * @param mediaType
+     * @return
+     */
+    public JZVideoPlayerStandard setMediaType(JZMediaManager.MediaType mediaType) {
+        this.mMediaType = mediaType;
+        return this;
+    }
 
     protected void setUp(Object[] dataSourceObjects, int defaultUrlMapIndex, int screen, Object... objects) {
         super.setUp(dataSourceObjects, defaultUrlMapIndex, screen, objects);
@@ -146,7 +157,7 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
         if (objects.length >= 2) {
             if (objects[1] instanceof Bitmap)
                 thumbImageView.setImageBitmap((Bitmap) objects[1]);
-            else if(objects[1] instanceof Integer){
+            else if (objects[1] instanceof Integer) {
                 thumbImageView.setImageResource((Integer) objects[1]);
             }
         }
@@ -154,7 +165,7 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
             fullscreenButton.setImageResource(R.drawable.jz_shrink);
             tinyBackImageView.setVisibility(View.INVISIBLE);
             batteryTimeLayout.setVisibility(View.VISIBLE);
-            topContainer.setVisibility(isFullWinTopVisible?VISIBLE:GONE);
+            topContainer.setVisibility(isFullWinTopVisible ? VISIBLE : GONE);
             if (((LinkedHashMap) dataSourceObjects[0]).size() == 1) {
                 clarity.setVisibility(GONE);
             } else {
@@ -180,13 +191,23 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
         }
         setSystemTimeAndBattery();
         //自定义的设置
-        startLayout.setVisibility(isStartBtnVisible?VISIBLE:INVISIBLE);
+        startLayout.setVisibility(isStartBtnVisible ? VISIBLE : INVISIBLE);
         if (this.isLiveStream) {
             currentTimeTextView.setVisibility(INVISIBLE);
             totalTimeTextView.setVisibility(INVISIBLE);
             progressBar.setVisibility(INVISIBLE);
             bottomProgressBar.setVisibility(GONE);
             clarity.setVisibility(INVISIBLE);
+        }
+        if (this.isHideControl) {
+            currentTimeTextView.setVisibility(INVISIBLE);
+            totalTimeTextView.setVisibility(INVISIBLE);
+            progressBar.setVisibility(INVISIBLE);
+            bottomProgressBar.setVisibility(GONE);
+            clarity.setVisibility(INVISIBLE);
+            fullscreenButton.setVisibility(GONE);
+            topContainerWrap.setVisibility(GONE);
+            bottomProgressBarWrap.setVisibility(GONE);
         }
 
         if (tmp_test_back) {
@@ -258,6 +279,9 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        if (isHideControl) {
+            return false;
+        }
         int id = v.getId();
         if (id == R.id.surface_container) {
             switch (event.getAction()) {
@@ -303,7 +327,8 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
             if (currentState == CURRENT_STATE_NORMAL) {
                 if (!JZUtils.getCurrentFromDataSource(dataSourceObjects, currentUrlMapIndex).toString().startsWith("file") &&
                         !JZUtils.getCurrentFromDataSource(dataSourceObjects, currentUrlMapIndex).toString().startsWith("/") &&
-                        !JZUtils.isWifiConnected(getContext()) && !WIFI_TIP_DIALOG_SHOWED) {
+                        !JZUtils.isWifiConnected(getContext()) && !WIFI_TIP_DIALOG_SHOWED &&
+                        !(JZUtils.getCurrentFromDataSource(dataSourceObjects, currentUrlMapIndex) instanceof Uri)) {
                     showWifiDialog(ON_CLICK_START_THUMB);
                     return;
                 }
@@ -673,9 +698,9 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
 
     public void setAllControlsVisiblity(int topCon, int bottomCon, int startBtn, int loadingPro,
                                         int thumbImg, int bottomPro, int retryLayout) {
-        if ((currentScreen == SCREEN_WINDOW_NORMAL || currentScreen == SCREEN_WINDOW_LIST||currentScreen==SCREEN_WINDOW_TINY)&&isSmallWinTopVisible) {
+        if ((currentScreen == SCREEN_WINDOW_NORMAL || currentScreen == SCREEN_WINDOW_LIST || currentScreen == SCREEN_WINDOW_TINY) && isSmallWinTopVisible) {
             topContainer.setVisibility(topCon);
-        }else if(currentScreen==SCREEN_WINDOW_FULLSCREEN&&isFullWinTopVisible){
+        } else if (currentScreen == SCREEN_WINDOW_FULLSCREEN && isFullWinTopVisible) {
             topContainer.setVisibility(topCon);
         }
         bottomContainer.setVisibility(bottomCon);
@@ -861,7 +886,7 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
                         if (clarityPopWindow != null) {
                             clarityPopWindow.dismiss();
                         }
-                        if (currentScreen != SCREEN_WINDOW_TINY) {
+                        if (currentScreen != SCREEN_WINDOW_TINY && !isLiveStream && !isHideControl) {
                             bottomProgressBar.setVisibility(View.VISIBLE);
                         }
                     }
@@ -881,11 +906,12 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
 
     /**
      * 顶部标题栏是否可见
+     *
      * @param smallWindow
      * @param fullWindow
      * @return
      */
-    public JZVideoPlayerStandard setTopBarVisible(boolean smallWindow,boolean fullWindow) {
+    public JZVideoPlayerStandard setTopBarVisible(boolean smallWindow, boolean fullWindow) {
         this.isSmallWinTopVisible = smallWindow;
         this.isFullWinTopVisible = fullWindow;
         return this;
@@ -904,25 +930,38 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
 
     /**
      * 设置直播流
+     *
      * @param isLiveStream
      */
-    public JZVideoPlayerStandard setIsLiveStream(boolean isLiveStream){
+    public JZVideoPlayerStandard setIsLiveStream(boolean isLiveStream) {
         this.isLiveStream = isLiveStream;
         return this;
     }
 
     /**
+     * 设置是否隐藏所有控制面板
+     * @param isHideControl
+     * @return
+     */
+    public JZVideoPlayerStandard setIsHideControl(boolean isHideControl) {
+        this.isHideControl = isHideControl;
+        return this;
+    }
+
+    /**
      * 播放状态监听
+     *
      * @param onCurStateListener
      * @return
      */
-    public JZVideoPlayerStandard setOnCurStateListener(OnCurrentStateInterface onCurStateListener){
+    public JZVideoPlayerStandard setOnCurStateListener(OnCurrentStateInterface onCurStateListener) {
         this.onCurrentStateInterface = onCurStateListener;
         return this;
     }
 
     /**
      * 用户交互事件监听
+     *
      * @param jzUserEvent
      * @return
      */
@@ -946,16 +985,26 @@ public class JZVideoPlayerStandard extends JZVideoPlayer {
         setUp(dataSourceObjects, 0, screen, objects);
     }
 
+    public void setUp(Uri uri, @Screen int screen, Object... objects) {
+        LinkedHashMap map = new LinkedHashMap();
+        map.put(URL_KEY_DEFAULT, uri);
+        Object[] dataSourceObjects = new Object[1];
+        dataSourceObjects[0] = map;
+        setUp(dataSourceObjects, 0, screen, objects);
+    }
+
     /**
      * 开始播放
+     *
      * @return
      */
-    public void startPlay(){
+    public void startPlay() {
         startButton.performClick();
     }
 
     /**
      * list滚动结束播放
+     *
      * @param view
      * @param firstVisibleItem
      * @param visibleItemCount
