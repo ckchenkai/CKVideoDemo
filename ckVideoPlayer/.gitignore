@@ -1,0 +1,16 @@
+.gradle
+.idea
+/local.properties
+.DS_Store
+build
+*/build/*
+/captures
+*.iml
+*.apk
+gradle.propertities
+mirror/
+class_files.txt
+seeds.txt
+unused.txt
+*.log
+testjs.html

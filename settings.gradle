@@ -1,0 +1,3 @@
+include ':ckVideoPlayer'
+include ':app'
+rootProject.name = "CKVideoDemo"
